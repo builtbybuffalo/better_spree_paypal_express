@@ -9,7 +9,8 @@ module Spree
       shipping_adjustments = order.all_adjustments.shipping
 
       order.all_adjustments.eligible.each do |adjustment|
-        next if (tax_adjustments + shipping_adjustments).include?(adjustment)
+        next if adjustment.included?
+        next if [tax_adjustments, shipping_adjustments].include?(adjustment)
         items << {
           :Name => adjustment.label,
           :Quantity => 1,
