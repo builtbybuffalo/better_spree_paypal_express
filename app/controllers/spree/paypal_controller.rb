@@ -117,18 +117,19 @@ module Spree
       # or tax.  This is the easiest way to determine what the items should cost, as that
       # functionality doesn't currently exist in Spree core
       item_sum = current_order.total - shipment_sum - current_order.additional_tax_total
+      item_sum += current_order.additional_tax_total if current_order.additional_tax_total < 0
 
       if item_sum.zero?
         # Paypal does not support no items or a zero dollar ItemTotal
         # This results in the order summary being simply "Current purchase"
-        {
+        out = {
           :OrderTotal => {
             :currencyID => current_order.currency,
             :value => current_order.total
           }
         }
       else
-        {
+        out = {
           :OrderTotal => {
             :currencyID => current_order.currency,
             :value => current_order.total
@@ -141,16 +142,19 @@ module Spree
             :currencyID => current_order.currency,
             :value => shipment_sum,
           },
-          :TaxTotal => {
-            :currencyID => current_order.currency,
-            :value => current_order.additional_tax_total
-          },
           :ShipToAddress => address_options,
           :PaymentDetailsItem => items,
           :ShippingMethod => "Shipping Method Name Goes Here",
           :PaymentAction => "Sale"
         }
+        if current_order.additional_tax_total > 0
+          out[:TaxTotal] = {
+            :currencyID => current_order.currency,
+            :value => current_order.additional_tax_total
+          }
+        end
       end
+      out
     end
 
     def address_options
